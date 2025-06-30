@@ -3,9 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>FFE</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    Content
+    <div class="nav-bar">
+        <div class="nav-wrapper">
+            <div class="nav-path">
+                {{ current_path }}
+            </div>
+            <div class="nav-buttons">
+                <a class="nav-button" href="{{ url_for('index', path=home_path) }}">Home</a>
+                {% if not is_at_root %}
+                    <a class="nav-button" href="{{ url_for('index', path=parent_path) }}">Up</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+
+
+
+    <div class="container">
+        <h2>Folders</h2>
+        <div class="grid-container">
+            {% for item in folders %}
+                <div class="item">{{ item }}</div>
+            {% endfor %}
+        </div>
+
+        <h2>Files</h2>
+        <div class="grid-container">
+            {% for item in files %}
+                <div class="item">{{ item }}</div>
+            {% endfor %}
+        </div>
+    </div>
 </body>
 </html>
