@@ -35,7 +35,15 @@
         <h2>Files</h2>
         <div class="grid-container">
             {% for item in files %}
-                <div class="item">{{ item }}</div>
+                <div class="item_box">
+                    {% if item.image_bool %}
+                    <img src="{{ url_for('serve_file', filename=(current_path ~ '/' ~ item.name|string)) }}" class="thumbnail" alt="{{ item.name }}">
+                    {% else %}
+                        <img src="{{ url_for('static', filename='icons/file-icon.png') }}" class="thumbnail" alt="file icon">
+                    {% endif %}
+                
+                    <div class="item">{{ item.name }}</div>
+                </div>
             {% endfor %}
         </div>
     </div>

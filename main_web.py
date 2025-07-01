@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, url_for, redirect
+from flask import Flask, render_template, request, url_for, redirect, send_from_directory
 from datetime import datetime
 from pathlib import Path
 import yaml
@@ -31,7 +31,7 @@ def find_project_root(script_path, marker):
 
 
 
-def list_content(input_path):
+def list_content(input_path, image_extension_dict):
     content_folder_list = []
     content_file_list = []
 
@@ -39,46 +39,91 @@ def list_content(input_path):
         if entry.is_dir():
             content_folder_list.append(entry.relative_to(input_path))
         elif entry.is_file():
-            content_file_list.append(entry.relative_to(input_path))
+            if entry.suffix in image_extension_dict:
+                entry_dict = {
+                    'name': entry.relative_to(input_path),
+                    'image_bool': True 
+                }
+            else:
+                entry_dict = {
+                    'name': entry.relative_to(input_path),
+                    'image_bool': False 
+                }
+            content_file_list.append(entry_dict)
 
     return content_folder_list, content_file_list
 
 
-
 @app.route('/')
 def index():
-    subpath = request.args.get("path", "")
+    subpath = request.args.get("path", relative_home_path)
     print(f"Subpath: {subpath}")
     current_path = (explorer_root / subpath).resolve()
     print(f"Current Path: {current_path}")
     print(f"Explorer Root: {explorer_root}")
 
+    print(f"If Current Path Value: {str(current_path).lower()}")
+    print(f"If Explorer Root Value: {str(explorer_root).lower()}")
 
-    # Block escaping the drive root (D:\)
+
+    # This if statement makes sure that the explorer stays on the explorer root
+    # This means it will stay in D
     if not str(current_path).lower().startswith(str(explorer_root).lower()):
         return redirect(url_for('index'))
 
-    rel_path = current_path.relative_to(explorer_root)
-
-
-    content_folder_list, content_file_list = list_content(current_path)
+    content_folder_list, content_file_list = list_content(current_path, image_extension)
     
     if current_path == explorer_root:
         root_boolean = True
     else:
         root_boolean = False
 
-    parent_path = "" if root_boolean else str(rel_path.parent).replace("\\", "/")
+    if root_boolean:
+        parent_path = ""
+    else:
+        parent_path = str(current_path.relative_to(explorer_root).parent).replace("\\", "/")
+
+    print(f"Parent Path: {parent_path}")
+
 
     return render_template(
         'index.html',
         folders=content_folder_list,
         files=content_file_list,
-        current_path=str(rel_path).replace("\\", "/"),
+        current_path=str(current_path).replace("\\", "/"),
         parent_path=parent_path,
         is_at_root=root_boolean,
         home_path=home_path
     )
+
+
+
+
+
+@app.route('/files/<path:filename>')
+def serve_file(filename):
+    full_path = (explorer_root / filename).resolve()
+
+    if not str(full_path).startswith(str(explorer_root)):
+        return "Access Denied", 403
+
+    return send_from_directory(full_path.parent, full_path.name)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 if __name__ == '__main__':
     config_file_name = 'FFE_config.yaml'
@@ -102,7 +147,8 @@ if __name__ == '__main__':
     
     print(f"Relative Home Path: {relative_home_path}")
 
-    current_path = home_path
+
+    image_extension = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'}
 
 
     app.run(debug=True)
