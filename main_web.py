@@ -39,11 +39,13 @@ def list_content(input_path, image_extension_dict):
         if entry.is_dir():
             content_folder_list.append(entry.relative_to(input_path))
         elif entry.is_file():
+            # Check if the file is an image so that a thumbnail can be shown
             if entry.suffix in image_extension_dict:
                 entry_dict = {
                     'name': entry.relative_to(input_path),
                     'image_bool': True 
                 }
+            # If not, defaults to a default thumbnail
             else:
                 entry_dict = {
                     'name': entry.relative_to(input_path),
@@ -54,55 +56,57 @@ def list_content(input_path, image_extension_dict):
     return content_folder_list, content_file_list
 
 
+
+
+
 @app.route('/')
 def index():
+    # Current path will be an argument
     subpath = request.args.get("path", relative_home_path)
     print(f"Subpath: {subpath}")
-    current_path = (explorer_root / subpath).resolve()
+
+    current_path = explorer_root / subpath
+    current_path = current_path.resolve()
     print(f"Current Path: {current_path}")
-    print(f"Explorer Root: {explorer_root}")
-
-    print(f"If Current Path Value: {str(current_path).lower()}")
-    print(f"If Explorer Root Value: {str(explorer_root).lower()}")
-
 
     # This if statement makes sure that the explorer stays on the explorer root
     # This means it will stay in D
     if not str(current_path).lower().startswith(str(explorer_root).lower()):
         return redirect(url_for('index'))
 
-    content_folder_list, content_file_list = list_content(current_path, image_extension)
-    
+    # Root Boolean will be used to determine whether the up button will be showed
     if current_path == explorer_root:
         root_boolean = True
+        parent_path_string = ""
     else:
         root_boolean = False
+        parent_path = current_path.relative_to(explorer_root).parent
+        parent_path_string = str(parent_path).replace("\\", "/")
 
-    if root_boolean:
-        parent_path = ""
-    else:
-        parent_path = str(current_path.relative_to(explorer_root).parent).replace("\\", "/")
+    print(f"Parent Path: {parent_path_string}")
 
-    print(f"Parent Path: {parent_path}")
+
+    # Gather the content of the current path
+    content_folder_list, content_file_list = list_content(current_path, image_extension)
 
 
     return render_template(
         'index.html',
-        folders=content_folder_list,
-        files=content_file_list,
-        current_path=str(current_path).replace("\\", "/"),
-        parent_path=parent_path,
-        is_at_root=root_boolean,
-        home_path=home_path
+        index_folders=content_folder_list,
+        index_files=content_file_list,
+        index_current_path=str(current_path).replace("\\", "/"),
+        index_parent_path=parent_path_string,
+        index_root_check=root_boolean,
+        index_home_path=home_path
     )
 
 
 
 
 
-@app.route('/files/<path:filename>')
-def serve_file(filename):
-    full_path = (explorer_root / filename).resolve()
+@app.route('/<path:filename>')
+def serve_file(file_path):
+    full_path = (explorer_root / file_path).resolve()
 
     if not str(full_path).startswith(str(explorer_root)):
         return "Access Denied", 403

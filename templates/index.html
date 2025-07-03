@@ -10,12 +10,12 @@
     <div class="nav-bar">
         <div class="nav-wrapper">
             <div class="nav-path">
-                {{ current_path }}
+                {{ index_current_path }}
             </div>
             <div class="nav-buttons">
-                <a class="nav-button" href="{{ url_for('index', path=home_path) }}">Home</a>
-                {% if not is_at_root %}
-                    <a class="nav-button" href="{{ url_for('index', path=parent_path) }}">Up</a>
+                <a class="nav-button" href="{{ url_for('index', path=index_home_path) }}">Home</a>
+                {% if not index_root_check %}
+                    <a class="nav-button" href="{{ url_for('index', path=index_parent_path) }}">Up</a>
                 {% endif %}
             </div>
         </div>
@@ -27,19 +27,23 @@
     <div class="container">
         <h2>Folders</h2>
         <div class="grid-container">
-            {% for item in folders %}
-                <div class="item">{{ item }}</div>
+            {% for item in index_folders %}
+                <div class="item">
+                    <a href="{{ url_for('index', path=(current_path ~ '/' ~ item|string)) }}">
+                        {{ item }}
+                    </a>"
+                </div>
             {% endfor %}
         </div>
 
         <h2>Files</h2>
         <div class="grid-container">
-            {% for item in files %}
+            {% for item in index_files %}
                 <div class="item_box">
                     {% if item.image_bool %}
-                    <img src="{{ url_for('serve_file', filename=(current_path ~ '/' ~ item.name|string)) }}" class="thumbnail" alt="{{ item.name }}">
+                        <img src="{{ url_for('serve_file', filename=(current_path ~ '/' ~ item.name|string)) }}" class="thumbnail" alt="{{ item.name }}">
                     {% else %}
-                        <img src="{{ url_for('static', filename='icons/file-icon.png') }}" class="thumbnail" alt="file icon">
+                        <img src="{{ url_for('static', filename='fall_back_photo.jpg') }}" class="thumbnail" alt="file icon">
                     {% endif %}
                 
                     <div class="item">{{ item.name }}</div>
