@@ -7,13 +7,19 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    <!--
+        This section here controls the navigation bar at the top. It will show the current path.
+        It will also have buttons for going back to home and to go up one level
+    -->
     <div class="nav-bar">
         <div class="nav-wrapper">
             <div class="nav-path">
+                <!-- This part shows the current path -->
                 {{ index_current_path }}
             </div>
             <div class="nav-buttons">
                 <a class="nav-button" href="{{ url_for('index', path=index_home_path) }}">Home</a>
+                <!-- This is the if block that will check if the path is root -->
                 {% if not index_root_check %}
                     <a class="nav-button" href="{{ url_for('index', path=index_parent_path) }}">Up</a>
                 {% endif %}
@@ -22,34 +28,46 @@
     </div>
 
 
-
-
-    <div class="container">
-        <h2>Folders</h2>
-        <div class="grid-container">
-            {% for item in index_folders %}
-                <div class="item">
-                    <a href="{{ url_for('index', path=(current_path ~ '/' ~ item|string)) }}">
-                        {{ item }}
-                    </a>"
+    <!--
+        This section is where the files and folders are gonna be displayed.
+        A check is first performed to see if there is content.
+        If there is no content, there is an option to show another page.
+    -->
+    {% if index_check_not_empty_dict.whole_path_check %}
+        <div class="container">
+            <!-- This is for the folder section -->
+            {% if index_check_not_empty_dict.folder_check %}
+                <h2>Folders</h2>
+                <div class="grid-container">
+                    {% for item in index_folders %}
+                        <div class="item">
+                            <a href="{{ url_for('index', path=(index_current_path ~ '/' ~ item|string)) }}">
+                                {{ item }}
+                            </a>
+                        </div>
+                    {% endfor %}
                 </div>
-            {% endfor %}
-        </div>
+            {% endif %}
 
-        <h2>Files</h2>
-        <div class="grid-container">
-            {% for item in index_files %}
-                <div class="item_box">
-                    {% if item.image_bool %}
-                        <img src="{{ url_for('serve_file', filename=(current_path ~ '/' ~ item.name|string)) }}" class="thumbnail" alt="{{ item.name }}">
-                    {% else %}
-                        <img src="{{ url_for('static', filename='fall_back_photo.jpg') }}" class="thumbnail" alt="file icon">
-                    {% endif %}
-                
-                    <div class="item">{{ item.name }}</div>
+            <!-- This is for the file section -->
+            {% if index_check_not_empty_dict.file_check %}
+                <h2>Files</h2>
+                <div class="grid-container">
+                    {% for item in index_files %}
+                        <div class="item_box">
+                            {% if item.image_bool %}
+                                <img src="{{ url_for('serve_file', file_path=(index_current_path ~ '/' ~ item.name|string)) }}" class="thumbnail" alt="{{ item.name }}">
+                            {% else %}
+                                <img src="{{ url_for('static', filename='fall_back_photo.jpg') }}" class="thumbnail" alt="file icon">
+                            {% endif %}
+                            <div class="item">{{ item.name }}</div>
+                        </div>
+                    {% endfor %}
                 </div>
-            {% endfor %}
+            {% endif %}
         </div>
-    </div>
+    {% else %}
+        No Content
+    {% endif %}
 </body>
 </html>

@@ -43,12 +43,14 @@ def list_content(input_path, image_extension_dict):
             if entry.suffix in image_extension_dict:
                 entry_dict = {
                     'name': entry.relative_to(input_path),
+                    'parent_path': entry.parent,
                     'image_bool': True 
                 }
             # If not, defaults to a default thumbnail
             else:
                 entry_dict = {
                     'name': entry.relative_to(input_path),
+                    'parent_path': entry.parent,
                     'image_bool': False 
                 }
             content_file_list.append(entry_dict)
@@ -57,6 +59,28 @@ def list_content(input_path, image_extension_dict):
 
 
 
+def check_not_empty(folder_list, file_list):
+
+    folder_check = False
+    file_check = False
+
+    if len(folder_list) > 0:
+        folder_check = True
+    if len(file_list) > 0:
+        file_check = True
+
+    if folder_check or file_check:
+        whole_path_check = True
+    else:
+        whole_path_check = False
+
+    check_not_empty_dict = {
+        'whole_path_check': whole_path_check,
+        'folder_check': folder_check,
+        'file_check': file_check
+    }
+
+    return check_not_empty_dict
 
 
 @app.route('/')
@@ -89,6 +113,9 @@ def index():
     # Gather the content of the current path
     content_folder_list, content_file_list = list_content(current_path, image_extension)
 
+    check_not_empty_dict = check_not_empty(content_folder_list, content_file_list)
+
+    print(content_folder_list)
 
     return render_template(
         'index.html',
@@ -97,17 +124,19 @@ def index():
         index_current_path=str(current_path).replace("\\", "/"),
         index_parent_path=parent_path_string,
         index_root_check=root_boolean,
-        index_home_path=home_path
+        index_home_path=home_path,
+        index_check_not_empty_dict=check_not_empty_dict,
     )
 
 
 
 
-
-@app.route('/<path:filename>')
+# Return the path of the file
+@app.route('/<path:file_path>')
 def serve_file(file_path):
     full_path = (explorer_root / file_path).resolve()
 
+    # Checks if the path is in D
     if not str(full_path).startswith(str(explorer_root)):
         return "Access Denied", 403
 
@@ -122,7 +151,10 @@ def serve_file(file_path):
 
 
 
-
+@app.route('/sum_function/<a>+<b>')
+def print_text(a,b):
+    sum = int(a) + int(b)
+    return str(sum)
 
 
 
@@ -154,5 +186,10 @@ if __name__ == '__main__':
 
     image_extension = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'}
 
+
+    # blacklist_path_list = [
+        # WindowsPath('$RECYCLE.BIN'),
+        # WindowsPath('System Volume Information')
+    # ]
 
     app.run(debug=True)
