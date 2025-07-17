@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FFE</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='scripts/script.js') }}"></script>
 </head>
 <body>
     <!--
@@ -41,9 +42,9 @@
                 <div class="grid-container">
                     {% for item in index_folders %}
                         <div class="item">
-                            <a href="{{ url_for('index', path=(index_current_path ~ '/' ~ item|string)) }}">
-                                {{ item }}
-                            </a>
+                                <a href="{{ url_for('index', path=(index_current_path ~ '/' ~ item|string)) }}">
+                                    {{ item }}
+                                </a>
                         </div>
                     {% endfor %}
                 </div>
@@ -54,11 +55,13 @@
                 <h2>Files</h2>
                 <div class="grid-container">
                     {% for item in index_files %}
-                        <div class="item_box">
+                        <div class="item_box selectable" data-file-path="{{ index_current_path }}/{{ item.name }}">
                             {% if item.image_bool %}
                                 <img src="{{ url_for('serve_file', file_path=(index_current_path ~ '/' ~ item.name|string)) }}" class="thumbnail" alt="{{ item.name }}">
+                            {% elif item.video_bool %}
+                                <video src="{{ url_for('serve_file', file_path=(index_current_path ~ '/' ~ item.name|string)) }}" class="thumbnail"  muted></video>
                             {% else %}
-                                <img src="{{ url_for('static', filename='fall_back_photo.jpg') }}" class="thumbnail" alt="file icon">
+                                <img src="{{ url_for('static', filename='default_icon_photo.jpg') }}" class="thumbnail" alt="file icon">
                             {% endif %}
                             <div class="item">{{ item.name }}</div>
                         </div>
@@ -67,7 +70,20 @@
             {% endif %}
         </div>
     {% else %}
-        No Content
+        <div>
+            No Content
+        </div>
     {% endif %}
+
+
+
+    <div class="tool-bar">
+        <span>select</span>
+        <button id="export-button">Export</button>
+        <span>drag</span>
+    </div>
+
+
+
 </body>
 </html>

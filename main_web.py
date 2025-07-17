@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, url_for, redirect, send_from_directory
+from flask import Flask, render_template, request, url_for, redirect, send_from_directory, jsonify
 from datetime import datetime
 from pathlib import Path
 import yaml
@@ -31,7 +31,7 @@ def find_project_root(script_path, marker):
 
 
 
-def list_content(input_path, image_extension_dict):
+def list_content(input_path, image_extension_dict, video_extension_dict):
     content_folder_list = []
     content_file_list = []
 
@@ -40,11 +40,20 @@ def list_content(input_path, image_extension_dict):
             content_folder_list.append(entry.relative_to(input_path))
         elif entry.is_file():
             # Check if the file is an image so that a thumbnail can be shown
-            if entry.suffix in image_extension_dict:
+            if entry.suffix.lower() in image_extension_dict:
                 entry_dict = {
                     'name': entry.relative_to(input_path),
                     'parent_path': entry.parent,
-                    'image_bool': True 
+                    'image_bool': True,
+                    'video_bool': False
+                }
+            # Check if the file is a video so that a thumbnail can be shown
+            elif entry.suffix.lower() in video_extension_dict:
+                entry_dict = {
+                    'name': entry.relative_to(input_path),
+                    'parent_path': entry.parent,
+                    'image_bool': False,
+                    'video_bool': True
                 }
             # If not, defaults to a default thumbnail
             else:
@@ -58,9 +67,8 @@ def list_content(input_path, image_extension_dict):
     return content_folder_list, content_file_list
 
 
-
+# This function checks if the folder list and the file list has content
 def check_not_empty(folder_list, file_list):
-
     folder_check = False
     file_check = False
 
@@ -111,7 +119,7 @@ def index():
 
 
     # Gather the content of the current path
-    content_folder_list, content_file_list = list_content(current_path, image_extension)
+    content_folder_list, content_file_list = list_content(current_path, image_extension, video_extension)
 
     check_not_empty_dict = check_not_empty(content_folder_list, content_file_list)
 
@@ -151,6 +159,36 @@ def serve_file(file_path):
 
 
 
+
+
+
+
+@app.route('/export_selection', methods=['POST'])
+def export_selection():
+    try:
+        data = request.get_json()
+        selected = data.get('selected', [])
+        print("HEYS")
+        export_path = selection_path  # You can change this path
+        print(export_path)
+        with open(export_path, 'w', encoding='utf-8') as f:
+            import json
+            json.dump(selected, f, indent=4)
+
+        return jsonify({"status": "success"}), 200
+    except Exception as e:
+        print("Export Error:", e)
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+
+
+
+
+
+
+
+
 @app.route('/sum_function/<a>+<b>')
 def print_text(a,b):
     sum = int(a) + int(b)
@@ -175,21 +213,20 @@ if __name__ == '__main__':
 
     home_path = resources_dir.resolve()
     explorer_root = Path(home_path.drive + "\\") 
+    
 
     print(f"Explorer Root: {explorer_root}")
     print(f"Home Path: {home_path}")
 
     relative_home_path = home_path.relative_to(explorer_root)
+    selection_path = home_path / 'selection.json'
     
     print(f"Relative Home Path: {relative_home_path}")
 
 
     image_extension = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'}
 
+    video_extension = {'.mp4', '.mov', '.webm', '.avi'}
 
-    # blacklist_path_list = [
-        # WindowsPath('$RECYCLE.BIN'),
-        # WindowsPath('System Volume Information')
-    # ]
 
-    app.run(debug=True)
+    app.run(debug=True, port=1080)
