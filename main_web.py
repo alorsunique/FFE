@@ -93,53 +93,38 @@ def check_not_empty(folder_list, file_list):
 
 @app.route('/')
 def index():
+    # address_bar_path is the path in the address bar
+    # If empty, it will default to the home_path
+    address_bar_path = request.args.get("path", home_path)
+    print(f"Address Bar Path: {address_bar_path}")
 
-    print('Got Here')
-
-
-
-    # Current path will be an argument
-    # subpath will default to homepath if argument is empty
-    subpath = request.args.get("path", home_path)
-    print(f"Subpath: {subpath}")
-
-    current_path = Path(subpath).resolve()
-    print(f'Current Path Drive: {current_path.drive}')
+    current_path = Path(address_bar_path).resolve()
 
     if not current_path.exists():
         print('Path not found')
         return redirect(url_for('index'))
 
+    # Here current_path is converted to string so that 
+    # it can be stored properly in HTML
+    current_path_string = str(current_path).replace("\\", "/")
 
-    # current_path = explorer_root / subpath
-    # current_path = current_path.resolve()
-    # print(f"Current Path: {current_path}")
-
-    # This if statement makes sure that the explorer stays on the explorer root
-    # This means it will stay in D
-    # if not str(current_path).lower().startswith(str(explorer_root).lower()):
-        # return redirect(url_for('index'))
-
-    # Root Boolean will be used to determine whether the up button will be showed
-    if current_path == current_path.drive:
+    # root_boolean will be used to determine whether the up button will be shown
+    if str(current_path) == f'{current_path.drive}\\':
         root_boolean = True
+        # If at the root of the drive, parent_path should be empty
         parent_path_string = ""
     else:
         root_boolean = False
         parent_path = current_path.parent
+        # parent_path is converted to string
         parent_path_string = str(parent_path).replace("\\", "/")
 
     print(f"Parent Path: {parent_path_string}")
-
-    current_path_string = str(current_path).replace("\\", "/")
-
 
     # Gather the content of the current path
     content_folder_list, content_file_list = list_content(current_path, image_extension, video_extension)
 
     check_not_empty_dict = check_not_empty(content_folder_list, content_file_list)
-
-    print(content_folder_list)
 
     return render_template(
         'index.html',
@@ -159,7 +144,7 @@ def index():
 @app.route('/<path:file_path>')
 def serve_file(file_path):
     full_path = Path(file_path).resolve()
-
+    # First argument is where it will look for the second argument
     return send_from_directory(full_path.parent, full_path.name)
 
 
@@ -194,9 +179,11 @@ def export_selection():
 
 
 
-
-
-
+@app.route('/get_change_drive', methods=['POST'])
+def get_change_drive():
+    data = request.get_json()
+    print(data)
+    return jsonify({"status": "success"}), 200
 
 
 
@@ -231,9 +218,7 @@ if __name__ == '__main__':
 
     selection_dir = resources_dir / "Exported Selection"
 
-
     image_extension = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'}
     video_extension = {'.mp4', '.mov', '.webm', '.avi'}
-
 
     app.run(debug=True, port=1080)
