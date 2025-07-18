@@ -93,29 +93,45 @@ def check_not_empty(folder_list, file_list):
 
 @app.route('/')
 def index():
+
+    print('Got Here')
+
+
+
     # Current path will be an argument
-    subpath = request.args.get("path", relative_home_path)
+    # subpath will default to homepath if argument is empty
+    subpath = request.args.get("path", home_path)
     print(f"Subpath: {subpath}")
 
-    current_path = explorer_root / subpath
-    current_path = current_path.resolve()
-    print(f"Current Path: {current_path}")
+    current_path = Path(subpath).resolve()
+    print(f'Current Path Drive: {current_path.drive}')
+
+    if not current_path.exists():
+        print('Path not found')
+        return redirect(url_for('index'))
+
+
+    # current_path = explorer_root / subpath
+    # current_path = current_path.resolve()
+    # print(f"Current Path: {current_path}")
 
     # This if statement makes sure that the explorer stays on the explorer root
     # This means it will stay in D
-    if not str(current_path).lower().startswith(str(explorer_root).lower()):
-        return redirect(url_for('index'))
+    # if not str(current_path).lower().startswith(str(explorer_root).lower()):
+        # return redirect(url_for('index'))
 
     # Root Boolean will be used to determine whether the up button will be showed
-    if current_path == explorer_root:
+    if current_path == current_path.drive:
         root_boolean = True
         parent_path_string = ""
     else:
         root_boolean = False
-        parent_path = current_path.relative_to(explorer_root).parent
+        parent_path = current_path.parent
         parent_path_string = str(parent_path).replace("\\", "/")
 
     print(f"Parent Path: {parent_path_string}")
+
+    current_path_string = str(current_path).replace("\\", "/")
 
 
     # Gather the content of the current path
@@ -129,7 +145,7 @@ def index():
         'index.html',
         index_folders=content_folder_list,
         index_files=content_file_list,
-        index_current_path=str(current_path).replace("\\", "/"),
+        index_current_path=current_path_string,
         index_parent_path=parent_path_string,
         index_root_check=root_boolean,
         index_home_path=home_path,
@@ -142,11 +158,7 @@ def index():
 # Return the path of the file
 @app.route('/<path:file_path>')
 def serve_file(file_path):
-    full_path = (explorer_root / file_path).resolve()
-
-    # Checks if the path is in D
-    if not str(full_path).startswith(str(explorer_root)):
-        return "Access Denied", 403
+    full_path = Path(file_path).resolve()
 
     return send_from_directory(full_path.parent, full_path.name)
 
@@ -169,7 +181,7 @@ def export_selection():
         data = request.get_json()
         selected = data.get('selected', [])
         print("HEYS")
-        export_path = selection_path  # You can change this path
+        export_path = selection_dir / "Out.json"  # You can change this path
         print(export_path)
         with open(export_path, 'w', encoding='utf-8') as f:
             import json
@@ -212,20 +224,15 @@ if __name__ == '__main__':
     resources_dir = Path(config_content['resources_dir'])
 
     home_path = resources_dir.resolve()
-    explorer_root = Path(home_path.drive + "\\") 
-    
-
-    print(f"Explorer Root: {explorer_root}")
     print(f"Home Path: {home_path}")
 
-    relative_home_path = home_path.relative_to(explorer_root)
-    selection_path = home_path / 'selection.json'
-    
-    print(f"Relative Home Path: {relative_home_path}")
+    current_path = home_path
+    print(f"Current Path: {current_path}")
+
+    selection_dir = resources_dir / "Exported Selection"
 
 
     image_extension = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'}
-
     video_extension = {'.mp4', '.mov', '.webm', '.avi'}
 
 
